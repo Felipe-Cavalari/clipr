@@ -1,0 +1,15 @@
+# Clipr - Dependências principais
+
+# CLI Framework
+click>=8.1.0
+
+# Download de vídeos (suporta YouTube e Instagram)
+yt-dlp>=2024.0.0
+
+# Interface rica para terminal
+rich>=13.0.0
+
+# FFmpeg é necessário para mesclar áudio e vídeo
+# Instruções de instalação:
+# Windows: choco install ffmpeg
+# ou baixe de: https://ffmpeg.org/download.html
