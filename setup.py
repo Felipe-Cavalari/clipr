@@ -34,6 +34,8 @@ setup(
         "click>=8.1.0",
         "yt-dlp>=2024.0.0",
         "rich>=13.0.0",
+        "openai-whisper>=20230314",
+        "pydub>=0.25.1",
     ],
     entry_points={
         "console_scripts": [

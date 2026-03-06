@@ -35,7 +35,7 @@ class InstagramDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-    def download(self, url: str, custom_filename: Optional[str] = None) -> bool:
+    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
         """
         Baixa um Reel do Instagram
         
@@ -44,7 +44,7 @@ class InstagramDownloader:
             custom_filename: Nome customizado para o arquivo (opcional)
             
         Returns:
-            True se o download foi bem-sucedido, False caso contrário
+            Path do arquivo se o download foi bem-sucedido, None caso contrário
         """
         try:
             logger.info(f"Analisando Reel do Instagram: {url}")
@@ -85,7 +85,7 @@ class InstagramDownloader:
                 if Path(output_template).exists():
                     logger.warning(f"Arquivo já existe: {filename}")
                     logger.info("Download ignorado para evitar duplicação")
-                    return True
+                    return Path(output_template)
                 
                 # Configuração de download - melhor qualidade disponível
                 ydl_opts = {
@@ -107,7 +107,7 @@ class InstagramDownloader:
                     ydl.download([url])
                 
                 logger.success(f"✓ Reel salvo em: {output_template}")
-                return True
+                return Path(output_template)
                 
         except yt_dlp.utils.DownloadError as e:
             logger.error(f"Erro ao baixar Reel: {str(e)}")
@@ -116,17 +116,17 @@ class InstagramDownloader:
                 logger.info("Certifique-se de que o Reel é público")
             elif "not available" in str(e).lower():
                 logger.error("Reel indisponível ou removido")
-            return False
+            return None
             
         except yt_dlp.utils.ExtractorError as e:
             logger.error(f"Erro ao extrair informações: {str(e)}")
             logger.error("Verifique se a URL está correta")
-            return False
+            return None
             
         except Exception as e:
             logger.error(f"Erro inesperado: {str(e)}")
             logger.debug(f"Detalhes técnicos: {type(e).__name__}")
-            return False
+            return None
     
     def get_reel_info(self, url: str) -> Optional[Dict[str, Any]]:
         """

@@ -26,6 +26,13 @@ Clipr é uma ferramenta de linha de comando robusta e fácil de usar para baixar
 - **Python 3.10+**
 - **FFmpeg** (necessário para mesclar áudio e vídeo)
 
+### Instalar FFmpeg no macOS
+
+```bash
+# Usando Homebrew
+brew install ffmpeg
+```
+
 ### Instalar FFmpeg no Windows
 
 ```powershell
@@ -52,6 +59,12 @@ cd clipr
 # Windows PowerShell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
+```
+
+```bash
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
 ```
 
 ### 3. Instale as dependências
@@ -146,13 +159,21 @@ clipr batch --help
 
 ## 📂 Estrutura de Pastas
 
-Os vídeos são salvos automaticamente em:
+Os vídeos são salvos automaticamente em (diretório padrão por sistema):
 
 ```
 C:\Users\felip\Videos\Videos baixados\
 ├── Youtube\       # Vídeos e Shorts do YouTube
 └── Instagram\     # Reels do Instagram
 ```
+
+```text
+/Users/<seu_usuario>/Movies/Videos baixados/
+├── Youtube/        # Vídeos e Shorts do YouTube
+└── Instagram/      # Reels do Instagram
+```
+
+Também é possível customizar o diretório base com a variável de ambiente `CLIPR_OUTPUT_DIR`.
 
 ---
 
