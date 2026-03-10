@@ -85,11 +85,10 @@ class YouTubeDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-<<<<<<< HEAD
     def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
-=======
     def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
+
         """
         Baixa um vídeo do YouTube
         
@@ -184,15 +183,13 @@ class YouTubeDownloader:
                 logger.error("O vídeo é privado ou restrito")
             elif "Video unavailable" in str(e):
                 logger.error("Vídeo indisponível ou removido")
-<<<<<<< HEAD
             elif "age" in str(e).lower() or "confirm your age" in str(e).lower():
                 logger.error("Vídeo restrito por idade")
                 if not browser:
                     logger.info("Dica: use --browser chrome (ou firefox, edge) para usar cookies do seu browser")
             return False
-=======
             return None
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+            return None
             
         except yt_dlp.utils.ExtractorError as e:
             logger.error(f"Erro ao extrair informações: {str(e)}")

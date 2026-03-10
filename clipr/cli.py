@@ -28,17 +28,14 @@ def cli(ctx):
 @click.argument('url', required=True)
 @click.option('--name', '-n', help='Nome customizado para o arquivo (opcional)')
 @click.option('--info', '-i', is_flag=True, help='Apenas exibir informações sem baixar')
-<<<<<<< HEAD
 @click.option('--browser', '-b', default=None,
               help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
 def download(url: str, name: str, info: bool, browser: str):
-=======
 @click.option('--transcribe', '-t', is_flag=True, help='Gerar transcrição após o download')
 @click.option('--model', '-m', default='base', 
               type=click.Choice(['tiny', 'base', 'small', 'medium', 'large']),
               help='Modelo Whisper a usar (padrão: base)')
 def download(url: str, name: str, info: bool, transcribe: bool, model: str):
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     """
     Baixa um vídeo do YouTube ou Instagram Reel
     
@@ -56,14 +53,16 @@ def download(url: str, name: str, info: bool, transcribe: bool, model: str):
       
       clipr download URL --info  (apenas visualizar informações)
       
-<<<<<<< HEAD
       clipr download URL --browser chrome  (vídeos com restrição de idade)
-=======
       clipr download URL --transcribe  (gerar transcrição após download)
       
       clipr download URL --transcribe --model small  (transcrever com modelo pequeno)
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+
+      clipr download URL --transcribe  (gerar transcrição após download)
+      
+      clipr download URL --transcribe --model small  (transcrever com modelo pequeno)
     """
+    
     logger.header(f"Clipr v{__version__} - Video Downloader")
     
     downloader = VideoDownloader()
@@ -95,11 +94,10 @@ def download(url: str, name: str, info: bool, transcribe: bool, model: str):
     logger.info(f"   Instagram: {VideoPath.INSTAGRAM_PATH}")
     logger.separator()
     
-<<<<<<< HEAD
     success = downloader.download(url, name, browser=browser)
+    success = downloader.download(url, name, transcribe=transcribe, transcribe_model=model)
 =======
     success = downloader.download(url, name, transcribe=transcribe, transcribe_model=model)
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     
     logger.separator()
     if success:

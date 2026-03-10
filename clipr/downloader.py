@@ -24,23 +24,23 @@ class VideoDownloader:
         self.instagram = InstagramDownloader()
         self.transcriber = VideoTranscriber()
     
-<<<<<<< HEAD
     def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
+    def download(self, url: str, custom_filename: Optional[str] = None, transcribe: bool = False, transcribe_model: str = "base") -> bool:
 =======
     def download(self, url: str, custom_filename: Optional[str] = None, transcribe: bool = False, transcribe_model: str = "base") -> bool:
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+
         """
         Baixa um vídeo detectando automaticamente a plataforma
         
         Args:
             url: URL do vídeo (YouTube ou Instagram)
             custom_filename: Nome customizado para o arquivo (opcional)
-<<<<<<< HEAD
             browser: Nome do browser para extrair cookies (ex: chrome, firefox, edge)
+            transcribe: Se True, gera transcrição após o download
+            transcribe_model: Modelo Whisper a usar (tiny, base, small, medium, large)
 =======
             transcribe: Se True, gera transcrição após o download
             transcribe_model: Modelo Whisper a usar (tiny, base, small, medium, large)
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
             
         Returns:
             True se o download foi bem-sucedido, False caso contrário
@@ -61,15 +61,17 @@ class VideoDownloader:
             video_path = None
             
             if platform == "youtube":
-<<<<<<< HEAD
                 return self.youtube.download(url, custom_filename, browser=browser)
             elif platform == "instagram":
                 return self.instagram.download(url, custom_filename, browser=browser)
-=======
                 video_path = self.youtube.download(url, custom_filename)
             elif platform == "instagram":
                 video_path = self.instagram.download(url, custom_filename)
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+
+                video_path = self.youtube.download(url, custom_filename)
+            elif platform == "instagram":
+                video_path = self.instagram.download(url, custom_filename)
+
             else:
                 logger.error(f"Plataforma não suportada: {platform}")
                 return False

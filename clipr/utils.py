@@ -4,12 +4,12 @@ Módulo de utilitários para paths, validações e helpers
 
 import os
 import re
-<<<<<<< HEAD
 import sys
-=======
 import os
 import platform
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
+import os
+import platform
+
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -17,7 +17,6 @@ from urllib.parse import urlparse
 
 class VideoPath:
     """Gerenciador de caminhos para organização de vídeos"""
-<<<<<<< HEAD
     
     @staticmethod
     def _get_videos_dir() -> Path:
@@ -48,7 +47,6 @@ class VideoPath:
         return (home / "Videos") if (home / "Videos").exists() else (home / "Movies")
 
     BASE_PATH = _get_videos_dir.__func__() / "Videos baixados"
-=======
 
     @staticmethod
     def _get_default_base_path() -> Path:
@@ -65,7 +63,6 @@ class VideoPath:
         return home / "Videos" / "Videos baixados"
 
     BASE_PATH = Path(os.getenv("CLIPR_OUTPUT_DIR", _get_default_base_path.__func__()))
->>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     YOUTUBE_PATH = BASE_PATH / "Youtube"
     INSTAGRAM_PATH = BASE_PATH / "Instagram"
     YOUTUBE_TRANSCRIPTS_PATH = YOUTUBE_PATH / "Transcripts"
