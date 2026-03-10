@@ -4,7 +4,12 @@ Módulo de utilitários para paths, validações e helpers
 
 import os
 import re
+<<<<<<< HEAD
 import sys
+=======
+import os
+import platform
+>>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -12,6 +17,7 @@ from urllib.parse import urlparse
 
 class VideoPath:
     """Gerenciador de caminhos para organização de vídeos"""
+<<<<<<< HEAD
     
     @staticmethod
     def _get_videos_dir() -> Path:
@@ -42,8 +48,28 @@ class VideoPath:
         return (home / "Videos") if (home / "Videos").exists() else (home / "Movies")
 
     BASE_PATH = _get_videos_dir.__func__() / "Videos baixados"
+=======
+
+    @staticmethod
+    def _get_default_base_path() -> Path:
+        """Retorna o diretório base padrão de acordo com o sistema operacional"""
+        home = Path.home()
+        system_name = platform.system().lower()
+
+        if system_name == "darwin":  # macOS
+            return home / "Movies" / "Videos baixados"
+        if system_name == "windows":
+            return home / "Videos" / "Videos baixados"
+
+        # Linux e outros Unix-like
+        return home / "Videos" / "Videos baixados"
+
+    BASE_PATH = Path(os.getenv("CLIPR_OUTPUT_DIR", _get_default_base_path.__func__()))
+>>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     YOUTUBE_PATH = BASE_PATH / "Youtube"
     INSTAGRAM_PATH = BASE_PATH / "Instagram"
+    YOUTUBE_TRANSCRIPTS_PATH = YOUTUBE_PATH / "Transcripts"
+    INSTAGRAM_TRANSCRIPTS_PATH = INSTAGRAM_PATH / "Transcripts"
     
     @classmethod
     def ensure_directories(cls) -> None:
@@ -51,6 +77,8 @@ class VideoPath:
         cls.BASE_PATH.mkdir(parents=True, exist_ok=True)
         cls.YOUTUBE_PATH.mkdir(parents=True, exist_ok=True)
         cls.INSTAGRAM_PATH.mkdir(parents=True, exist_ok=True)
+        cls.YOUTUBE_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
+        cls.INSTAGRAM_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
     
     @classmethod
     def get_output_path(cls, platform: str) -> Path:
@@ -59,6 +87,16 @@ class VideoPath:
             return cls.YOUTUBE_PATH
         elif platform.lower() == "instagram":
             return cls.INSTAGRAM_PATH
+        else:
+            raise ValueError(f"Plataforma desconhecida: {platform}")
+    
+    @classmethod
+    def get_transcript_path(cls, platform: str) -> Path:
+        """Retorna o caminho para salvar transcritos baseado na plataforma"""
+        if platform.lower() == "youtube":
+            return cls.YOUTUBE_TRANSCRIPTS_PATH
+        elif platform.lower() == "instagram":
+            return cls.INSTAGRAM_TRANSCRIPTS_PATH
         else:
             raise ValueError(f"Plataforma desconhecida: {platform}")
 

@@ -9,7 +9,17 @@ yt-dlp>=2024.0.0
 # Interface rica para terminal
 rich>=13.0.0
 
-# FFmpeg é necessário para mesclar áudio e vídeo
+# Transcrição de áudio (OpenAI Whisper)
+openai-whisper>=20230314
+
+# Manipulação de áudio
+pydub>=0.25.1
+
+# FFmpeg é necessário para:
+# 1. Mesclar áudio e vídeo (download)
+# 2. Extrair áudio de vídeos (transcrição)
+#
 # Instruções de instalação:
+# macOS: brew install ffmpeg
 # Windows: choco install ffmpeg
 # ou baixe de: https://ffmpeg.org/download.html

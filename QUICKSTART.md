@@ -17,6 +17,22 @@ pip install -e .
 clipr test
 ```
 
+```bash
+# macOS / Linux
+# 1. Criar ambiente virtual
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Instalar dependências
+pip install -r requirements.txt
+
+# 3. Instalar Clipr
+pip install -e .
+
+# 4. Testar instalação
+clipr test
+```
+
 ## Comandos Essenciais
 
 ### Download básico
@@ -63,6 +79,14 @@ C:\Users\felip\Videos\Videos baixados\
 └── Instagram\
 ```
 
+```text
+/Users/<seu_usuario>/Movies/Videos baixados/
+├── Youtube/
+└── Instagram/
+```
+
+Também é possível customizar o diretório base com `CLIPR_OUTPUT_DIR`.
+
 ## Requisitos
 
 - Python 3.10+
@@ -72,6 +96,10 @@ C:\Users\felip\Videos\Videos baixados\
 
 ```powershell
 choco install ffmpeg
+```
+
+```bash
+brew install ffmpeg
 ```
 
 ## Exemplos Práticos

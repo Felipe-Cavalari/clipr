@@ -28,9 +28,17 @@ def cli(ctx):
 @click.argument('url', required=True)
 @click.option('--name', '-n', help='Nome customizado para o arquivo (opcional)')
 @click.option('--info', '-i', is_flag=True, help='Apenas exibir informações sem baixar')
+<<<<<<< HEAD
 @click.option('--browser', '-b', default=None,
               help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
 def download(url: str, name: str, info: bool, browser: str):
+=======
+@click.option('--transcribe', '-t', is_flag=True, help='Gerar transcrição após o download')
+@click.option('--model', '-m', default='base', 
+              type=click.Choice(['tiny', 'base', 'small', 'medium', 'large']),
+              help='Modelo Whisper a usar (padrão: base)')
+def download(url: str, name: str, info: bool, transcribe: bool, model: str):
+>>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     """
     Baixa um vídeo do YouTube ou Instagram Reel
     
@@ -48,7 +56,13 @@ def download(url: str, name: str, info: bool, browser: str):
       
       clipr download URL --info  (apenas visualizar informações)
       
+<<<<<<< HEAD
       clipr download URL --browser chrome  (vídeos com restrição de idade)
+=======
+      clipr download URL --transcribe  (gerar transcrição após download)
+      
+      clipr download URL --transcribe --model small  (transcrever com modelo pequeno)
+>>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     """
     logger.header(f"Clipr v{__version__} - Video Downloader")
     
@@ -81,7 +95,11 @@ def download(url: str, name: str, info: bool, browser: str):
     logger.info(f"   Instagram: {VideoPath.INSTAGRAM_PATH}")
     logger.separator()
     
+<<<<<<< HEAD
     success = downloader.download(url, name, browser=browser)
+=======
+    success = downloader.download(url, name, transcribe=transcribe, transcribe_model=model)
+>>>>>>> 9807881f75f478ccc9ed0da4fff4a2c6b963ca59
     
     logger.separator()
     if success:
@@ -212,6 +230,105 @@ def test():
     
     logger.separator()
     logger.success("Clipr está pronto para uso! 🎉")
+
+
+@cli.command()
+@click.argument('video_path', type=click.Path(exists=True), required=True)
+@click.option('--platform', '-p', type=click.Choice(['youtube', 'instagram']),
+              help='Plataforma (opcional, usa padrão baseado no diretório)')
+@click.option('--model', '-m', default='base',
+              type=click.Choice(['tiny', 'base', 'small', 'medium', 'large']),
+              help='Modelo Whisper a usar (padrão: base)')
+@click.option('--language', '-l', 
+              help='Código de idioma (ex: pt, en, es). Deixe vazio para auto-detect')
+def transcribe(video_path: str, platform: str, model: str, language: str):
+    """
+    Transcreve um vídeo já baixado
+    
+    VIDEO_PATH: Caminho para o arquivo de vídeo (ou diretório com vídeos)
+    
+    Exemplos:
+    
+      clipr transcribe /caminho/para/video.mp4
+      
+      clipr transcribe /caminho/para/video.mp4 --model small
+      
+      clipr transcribe /caminho/para/video.mp4 --language pt
+      
+      clipr transcribe ~/Movies/Videos\\ baixados/Youtube/ (transcrever todos os vídeos)
+    """
+    from .transcriber import VideoTranscriber
+    
+    logger.header(f"Clipr v{__version__} - Video Transcriber")
+    
+    video_path_obj = Path(video_path)
+    
+    if not video_path_obj.exists():
+        logger.error(f"Arquivo ou diretório não encontrado: {video_path}")
+        sys.exit(1)
+    
+    transcriber = VideoTranscriber(model=model)
+    
+    # Se for diretório, transcrever todos os vídeos
+    if video_path_obj.is_dir():
+        logger.info(f"Processando diretório: {video_path}")
+        logger.separator()
+        
+        # Encontrar vídeos no diretório
+        video_extensions = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.webm'}
+        video_files = [
+            f for f in video_path_obj.rglob('*')
+            if f.is_file() and f.suffix.lower() in video_extensions and 'transcript' not in f.name
+        ]
+        
+        if not video_files:
+            logger.warning("Nenhum arquivo de vídeo encontrado no diretório")
+            sys.exit(1)
+        
+        logger.info(f"Encontrados {len(video_files)} vídeo(s)")
+        logger.separator()
+        
+        results = transcriber.transcribe_batch(
+            video_files,
+            output_dir=video_path_obj if not platform else None,
+            language=language if language else None
+        )
+        
+        logger.header("Resumo da Transcrição em Lote")
+        successful = sum(1 for v in results.values() if v)
+        failed = len(results) - successful
+        
+        logger.success(f"✓ Transcritos concluídos: {successful}")
+        if failed > 0:
+            logger.error(f"✗ Falhas: {failed}")
+        
+        if failed > 0:
+            sys.exit(1)
+    
+    # Se for arquivo, transcrever apenas ele
+    elif video_path_obj.is_file():
+        logger.info(f"Transcrevendo arquivo: {video_path_obj.name}")
+        logger.separator()
+        
+        # Determinar diretório de saída
+        if platform:
+            output_dir = VideoPath.get_transcript_path(platform)
+        else:
+            output_dir = video_path_obj.parent
+        
+        result = transcriber.transcribe_video(
+            video_path_obj,
+            output_dir=output_dir,
+            language=language if language else None
+        )
+        
+        if not result:
+            logger.error("Falha ao transcrever vídeo")
+            sys.exit(1)
+    
+    else:
+        logger.error("Path inválido")
+        sys.exit(1)
 
 
 def main():
