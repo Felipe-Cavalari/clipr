@@ -85,13 +85,17 @@ class YouTubeDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
     def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
+    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
+
         """
         Baixa um vídeo do YouTube
         
         Args:
             url: URL do vídeo
             custom_filename: Nome customizado para o arquivo (opcional)
+            browser: Nome do browser para extrair cookies, ex: chrome, firefox, edge (opcional)
             
         Returns:
             Path do arquivo se o download foi bem-sucedido, None caso contrário
@@ -104,6 +108,8 @@ class YouTubeDownloader:
                 'quiet': True,
                 'no_warnings': True,
             }
+            if browser:
+                ydl_opts_info['cookiesfrombrowser'] = (browser,)
             
             with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -154,6 +160,10 @@ class YouTubeDownloader:
                     }],
                 }
                 
+                if browser:
+                    ydl_opts['cookiesfrombrowser'] = (browser,)
+                    logger.info(f"Usando cookies do {browser}...")
+                
                 logger.info("Iniciando download...")
                 
                 # Download do vídeo
@@ -165,10 +175,20 @@ class YouTubeDownloader:
                 
         except yt_dlp.utils.DownloadError as e:
             logger.error(f"Erro ao baixar vídeo: {str(e)}")
-            if "Private video" in str(e) or "members-only" in str(e):
+            if "DRM" in str(e) or "drm" in str(e).lower():
+                logger.error("Este vídeo é protegido por DRM (Widevine/EME)")
+                logger.info("Vídeos com DRM não podem ser baixados — a criptografia é aplicada pelo próprio conteúdo")
+                logger.info("Isso afeta filmes, séries e conteúdos licenciados no YouTube")
+            elif "Private video" in str(e) or "members-only" in str(e):
                 logger.error("O vídeo é privado ou restrito")
             elif "Video unavailable" in str(e):
                 logger.error("Vídeo indisponível ou removido")
+            elif "age" in str(e).lower() or "confirm your age" in str(e).lower():
+                logger.error("Vídeo restrito por idade")
+                if not browser:
+                    logger.info("Dica: use --browser chrome (ou firefox, edge) para usar cookies do seu browser")
+            return False
+            return None
             return None
             
         except yt_dlp.utils.ExtractorError as e:
@@ -180,12 +200,13 @@ class YouTubeDownloader:
             logger.error(f"Erro inesperado: {str(e)}")
             return None
     
-    def get_video_info(self, url: str) -> Optional[Dict[str, Any]]:
+    def get_video_info(self, url: str, browser: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Obtém informações sobre um vídeo sem baixá-lo
         
         Args:
             url: URL do vídeo
+            browser: Nome do browser para extrair cookies (opcional)
             
         Returns:
             Dicionário com informações do vídeo ou None se houver erro
@@ -195,6 +216,9 @@ class YouTubeDownloader:
                 'quiet': True,
                 'no_warnings': True,
             }
+            
+            if browser:
+                ydl_opts['cookiesfrombrowser'] = (browser,)
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)

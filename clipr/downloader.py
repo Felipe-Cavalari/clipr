@@ -24,13 +24,21 @@ class VideoDownloader:
         self.instagram = InstagramDownloader()
         self.transcriber = VideoTranscriber()
     
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
     def download(self, url: str, custom_filename: Optional[str] = None, transcribe: bool = False, transcribe_model: str = "base") -> bool:
+=======
+    def download(self, url: str, custom_filename: Optional[str] = None, transcribe: bool = False, transcribe_model: str = "base") -> bool:
+
         """
         Baixa um vídeo detectando automaticamente a plataforma
         
         Args:
             url: URL do vídeo (YouTube ou Instagram)
             custom_filename: Nome customizado para o arquivo (opcional)
+            browser: Nome do browser para extrair cookies (ex: chrome, firefox, edge)
+            transcribe: Se True, gera transcrição após o download
+            transcribe_model: Modelo Whisper a usar (tiny, base, small, medium, large)
+=======
             transcribe: Se True, gera transcrição após o download
             transcribe_model: Modelo Whisper a usar (tiny, base, small, medium, large)
             
@@ -53,9 +61,17 @@ class VideoDownloader:
             video_path = None
             
             if platform == "youtube":
+                return self.youtube.download(url, custom_filename, browser=browser)
+            elif platform == "instagram":
+                return self.instagram.download(url, custom_filename, browser=browser)
                 video_path = self.youtube.download(url, custom_filename)
             elif platform == "instagram":
                 video_path = self.instagram.download(url, custom_filename)
+
+                video_path = self.youtube.download(url, custom_filename)
+            elif platform == "instagram":
+                video_path = self.instagram.download(url, custom_filename)
+
             else:
                 logger.error(f"Plataforma não suportada: {platform}")
                 return False
@@ -84,12 +100,13 @@ class VideoDownloader:
             logger.error(f"Erro crítico durante o download: {str(e)}")
             return False
     
-    def get_info(self, url: str) -> Optional[dict]:
+    def get_info(self, url: str, browser: Optional[str] = None) -> Optional[dict]:
         """
         Obtém informações sobre um vídeo sem baixá-lo
         
         Args:
             url: URL do vídeo
+            browser: Nome do browser para extrair cookies (opcional)
             
         Returns:
             Dicionário com informações ou None se houver erro
@@ -102,9 +119,9 @@ class VideoDownloader:
         
         try:
             if platform == "youtube":
-                return self.youtube.get_video_info(url)
+                return self.youtube.get_video_info(url, browser=browser)
             elif platform == "instagram":
-                return self.instagram.get_reel_info(url)
+                return self.instagram.get_reel_info(url, browser=browser)
             return None
             
         except Exception as e:

@@ -2,9 +2,14 @@
 Módulo de utilitários para paths, validações e helpers
 """
 
+import os
 import re
+import sys
 import os
 import platform
+import os
+import platform
+
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -12,6 +17,36 @@ from urllib.parse import urlparse
 
 class VideoPath:
     """Gerenciador de caminhos para organização de vídeos"""
+    
+    @staticmethod
+    def _get_videos_dir() -> Path:
+        """Resolve o diretório de vídeos do sistema operacional."""
+        home = Path.home()
+
+        if sys.platform.startswith("win"):
+            return home / "Videos"
+
+        # Tenta ler XDG_VIDEOS_DIR (Linux e alguns ambientes)
+        xdg_config = home / ".config" / "user-dirs.dirs"
+        if xdg_config.exists():
+            try:
+                content = xdg_config.read_text(encoding="utf-8", errors="ignore")
+                for line in content.splitlines():
+                    if line.startswith("XDG_VIDEOS_DIR="):
+                        value = line.split("=", 1)[1].strip().strip('"')
+                        value = value.replace("$HOME", str(home))
+                        value = os.path.expandvars(value)
+                        return Path(value)
+            except Exception:
+                pass
+
+        # Fallbacks por plataforma
+        if sys.platform == "darwin":
+            return (home / "Movies") if (home / "Movies").exists() else (home / "Videos")
+
+        return (home / "Videos") if (home / "Videos").exists() else (home / "Movies")
+
+    BASE_PATH = _get_videos_dir.__func__() / "Videos baixados"
 
     @staticmethod
     def _get_default_base_path() -> Path:
@@ -36,6 +71,7 @@ class VideoPath:
     @classmethod
     def ensure_directories(cls) -> None:
         """Cria os diretórios necessários caso não existam"""
+        cls.BASE_PATH.mkdir(parents=True, exist_ok=True)
         cls.YOUTUBE_PATH.mkdir(parents=True, exist_ok=True)
         cls.INSTAGRAM_PATH.mkdir(parents=True, exist_ok=True)
         cls.YOUTUBE_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
