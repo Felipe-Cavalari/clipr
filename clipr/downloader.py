@@ -21,13 +21,14 @@ class VideoDownloader:
         self.youtube = YouTubeDownloader()
         self.instagram = InstagramDownloader()
     
-    def download(self, url: str, custom_filename: Optional[str] = None) -> bool:
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
         """
         Baixa um vídeo detectando automaticamente a plataforma
         
         Args:
             url: URL do vídeo (YouTube ou Instagram)
             custom_filename: Nome customizado para o arquivo (opcional)
+            browser: Nome do browser para extrair cookies (ex: chrome, firefox, edge)
             
         Returns:
             True se o download foi bem-sucedido, False caso contrário
@@ -46,9 +47,9 @@ class VideoDownloader:
         # Delegar para o downloader apropriado
         try:
             if platform == "youtube":
-                return self.youtube.download(url, custom_filename)
+                return self.youtube.download(url, custom_filename, browser=browser)
             elif platform == "instagram":
-                return self.instagram.download(url, custom_filename)
+                return self.instagram.download(url, custom_filename, browser=browser)
             else:
                 logger.error(f"Plataforma não suportada: {platform}")
                 return False
@@ -57,12 +58,13 @@ class VideoDownloader:
             logger.error(f"Erro crítico durante o download: {str(e)}")
             return False
     
-    def get_info(self, url: str) -> Optional[dict]:
+    def get_info(self, url: str, browser: Optional[str] = None) -> Optional[dict]:
         """
         Obtém informações sobre um vídeo sem baixá-lo
         
         Args:
             url: URL do vídeo
+            browser: Nome do browser para extrair cookies (opcional)
             
         Returns:
             Dicionário com informações ou None se houver erro
@@ -75,9 +77,9 @@ class VideoDownloader:
         
         try:
             if platform == "youtube":
-                return self.youtube.get_video_info(url)
+                return self.youtube.get_video_info(url, browser=browser)
             elif platform == "instagram":
-                return self.instagram.get_reel_info(url)
+                return self.instagram.get_reel_info(url, browser=browser)
             return None
             
         except Exception as e:

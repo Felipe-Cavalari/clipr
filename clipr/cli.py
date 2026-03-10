@@ -28,7 +28,9 @@ def cli(ctx):
 @click.argument('url', required=True)
 @click.option('--name', '-n', help='Nome customizado para o arquivo (opcional)')
 @click.option('--info', '-i', is_flag=True, help='Apenas exibir informações sem baixar')
-def download(url: str, name: str, info: bool):
+@click.option('--browser', '-b', default=None,
+              help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
+def download(url: str, name: str, info: bool, browser: str):
     """
     Baixa um vídeo do YouTube ou Instagram Reel
     
@@ -45,15 +47,20 @@ def download(url: str, name: str, info: bool):
       clipr download URL --name "meu_video"
       
       clipr download URL --info  (apenas visualizar informações)
+      
+      clipr download URL --browser chrome  (vídeos com restrição de idade)
     """
     logger.header(f"Clipr v{__version__} - Video Downloader")
     
     downloader = VideoDownloader()
     
+    if browser:
+        logger.info(f"Usando cookies do browser: {browser}")
+
     # Modo informação
     if info:
         logger.info("Obtendo informações do vídeo...")
-        video_info = downloader.get_info(url)
+        video_info = downloader.get_info(url, browser=browser)
         
         if video_info:
             logger.separator()
@@ -74,7 +81,7 @@ def download(url: str, name: str, info: bool):
     logger.info(f"   Instagram: {VideoPath.INSTAGRAM_PATH}")
     logger.separator()
     
-    success = downloader.download(url, name)
+    success = downloader.download(url, name, browser=browser)
     
     logger.separator()
     if success:
@@ -88,7 +95,9 @@ def download(url: str, name: str, info: bool):
 @click.argument('urls', nargs=-1, required=True)
 @click.option('--continue-on-error', '-c', is_flag=True, 
               help='Continuar mesmo se algum download falhar')
-def batch(urls: tuple, continue_on_error: bool):
+@click.option('--browser', '-b', default=None,
+              help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
+def batch(urls: tuple, continue_on_error: bool, browser: str):
     """
     Baixa múltiplos vídeos em lote
     
@@ -99,6 +108,8 @@ def batch(urls: tuple, continue_on_error: bool):
       clipr batch URL1 URL2 URL3
       
       clipr batch URL1 URL2 --continue-on-error
+      
+      clipr batch URL1 URL2 --browser chrome
     """
     logger.header(f"Clipr v{__version__} - Download em Lote")
     
@@ -114,7 +125,7 @@ def batch(urls: tuple, continue_on_error: bool):
         logger.info(f"\n[{i}/{total}] Processando: {url}")
         logger.separator()
         
-        success = downloader.download(url)
+        success = downloader.download(url, browser=browser)
         
         if success:
             successful += 1

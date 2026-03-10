@@ -35,13 +35,14 @@ class InstagramDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-    def download(self, url: str, custom_filename: Optional[str] = None) -> bool:
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
         """
         Baixa um Reel do Instagram
         
         Args:
             url: URL do Reel
             custom_filename: Nome customizado para o arquivo (opcional)
+            browser: Nome do browser para extrair cookies (opcional)
             
         Returns:
             True se o download foi bem-sucedido, False caso contrário
@@ -54,6 +55,8 @@ class InstagramDownloader:
                 'quiet': True,
                 'no_warnings': True,
             }
+            if browser:
+                ydl_opts_info['cookiesfrombrowser'] = (browser,)
             
             with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -100,6 +103,10 @@ class InstagramDownloader:
                     },
                 }
                 
+                if browser:
+                    ydl_opts['cookiesfrombrowser'] = (browser,)
+                    logger.info(f"Usando cookies do {browser}...")
+                
                 logger.info("Iniciando download...")
                 
                 # Download do vídeo
@@ -113,7 +120,10 @@ class InstagramDownloader:
             logger.error(f"Erro ao baixar Reel: {str(e)}")
             if "Private" in str(e) or "login" in str(e).lower():
                 logger.error("O Reel é privado ou requer login")
-                logger.info("Certifique-se de que o Reel é público")
+                if not browser:
+                    logger.info("Dica: use --browser chrome (ou firefox, edge) para usar cookies do seu browser")
+                else:
+                    logger.info("Certifique-se de estar logado no Instagram no browser informado")
             elif "not available" in str(e).lower():
                 logger.error("Reel indisponível ou removido")
             return False
@@ -128,12 +138,13 @@ class InstagramDownloader:
             logger.debug(f"Detalhes técnicos: {type(e).__name__}")
             return False
     
-    def get_reel_info(self, url: str) -> Optional[Dict[str, Any]]:
+    def get_reel_info(self, url: str, browser: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Obtém informações sobre um Reel sem baixá-lo
         
         Args:
             url: URL do Reel
+            browser: Nome do browser para extrair cookies (opcional)
             
         Returns:
             Dicionário com informações do Reel ou None se houver erro
@@ -143,6 +154,8 @@ class InstagramDownloader:
                 'quiet': True,
                 'no_warnings': True,
             }
+            if browser:
+                ydl_opts['cookiesfrombrowser'] = (browser,)
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
