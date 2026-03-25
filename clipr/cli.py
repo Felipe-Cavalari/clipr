@@ -30,12 +30,11 @@ def cli(ctx):
 @click.option('--info', '-i', is_flag=True, help='Apenas exibir informações sem baixar')
 @click.option('--browser', '-b', default=None,
               help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
-def download(url: str, name: str, info: bool, browser: str):
 @click.option('--transcribe', '-t', is_flag=True, help='Gerar transcrição após o download')
 @click.option('--model', '-m', default='base', 
               type=click.Choice(['tiny', 'base', 'small', 'medium', 'large']),
               help='Modelo Whisper a usar (padrão: base)')
-def download(url: str, name: str, info: bool, transcribe: bool, model: str):
+def download(url: str, name: str, info: bool, browser: str, transcribe: bool, model: str):
     """
     Baixa um vídeo do YouTube ou Instagram Reel
     
@@ -94,10 +93,7 @@ def download(url: str, name: str, info: bool, transcribe: bool, model: str):
     logger.info(f"   Instagram: {VideoPath.INSTAGRAM_PATH}")
     logger.separator()
     
-    success = downloader.download(url, name, browser=browser)
-    success = downloader.download(url, name, transcribe=transcribe, transcribe_model=model)
-=======
-    success = downloader.download(url, name, transcribe=transcribe, transcribe_model=model)
+    success = downloader.download(url, name, browser=browser, transcribe=transcribe, transcribe_model=model)
     
     logger.separator()
     if success:

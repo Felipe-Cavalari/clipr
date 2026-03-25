@@ -35,10 +35,7 @@ class InstagramDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
-    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
-
-    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> Optional[Path]:
 
         """
         Baixa um Reel do Instagram

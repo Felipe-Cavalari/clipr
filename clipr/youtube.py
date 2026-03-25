@@ -85,9 +85,7 @@ class YouTubeDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> bool:
-    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
-    def download(self, url: str, custom_filename: Optional[str] = None) -> Optional[Path]:
+    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> Optional[Path]:
 
         """
         Baixa um vídeo do YouTube
@@ -187,8 +185,6 @@ class YouTubeDownloader:
                 logger.error("Vídeo restrito por idade")
                 if not browser:
                     logger.info("Dica: use --browser chrome (ou firefox, edge) para usar cookies do seu browser")
-            return False
-            return None
             return None
             
         except yt_dlp.utils.ExtractorError as e:
