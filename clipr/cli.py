@@ -30,11 +30,12 @@ def cli(ctx):
 @click.option('--info', '-i', is_flag=True, help='Apenas exibir informações sem baixar')
 @click.option('--browser', '-b', default=None,
               help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
+@click.option('--audio-only', is_flag=True, help='Baixar somente o áudio em .mp3')
 @click.option('--transcribe', '-t', is_flag=True, help='Gerar transcrição após o download')
 @click.option('--model', '-m', default='base', 
               type=click.Choice(['tiny', 'base', 'small', 'medium', 'large']),
               help='Modelo Whisper a usar (padrão: base)')
-def download(url: str, name: str, info: bool, browser: str, transcribe: bool, model: str):
+def download(url: str, name: str, info: bool, browser: str, audio_only: bool, transcribe: bool, model: str):
     """
     Baixa um vídeo do YouTube ou Instagram Reel
     
@@ -53,9 +54,8 @@ def download(url: str, name: str, info: bool, browser: str, transcribe: bool, mo
       clipr download URL --info  (apenas visualizar informações)
       
       clipr download URL --browser chrome  (vídeos com restrição de idade)
-      clipr download URL --transcribe  (gerar transcrição após download)
-      
-      clipr download URL --transcribe --model small  (transcrever com modelo pequeno)
+
+            clipr download URL --audio-only  (baixar somente o áudio em mp3)
 
       clipr download URL --transcribe  (gerar transcrição após download)
       
@@ -88,12 +88,21 @@ def download(url: str, name: str, info: bool, browser: str, transcribe: bool, mo
     
     # Modo download
     logger.info("Iniciando processo de download...")
-    logger.info(f"📂 Vídeos serão salvos em:")
+    if audio_only:
+        logger.info("Modo áudio apenas ativado: será gerado um arquivo .mp3")
+    logger.info(f"📂 Arquivos serão salvos em:")
     logger.info(f"   YouTube: {VideoPath.YOUTUBE_PATH}")
     logger.info(f"   Instagram: {VideoPath.INSTAGRAM_PATH}")
     logger.separator()
     
-    success = downloader.download(url, name, browser=browser, transcribe=transcribe, transcribe_model=model)
+    success = downloader.download(
+        url,
+        name,
+        browser=browser,
+        audio_only=audio_only,
+        transcribe=transcribe,
+        transcribe_model=model,
+    )
     
     logger.separator()
     if success:
@@ -109,7 +118,8 @@ def download(url: str, name: str, info: bool, browser: str, transcribe: bool, mo
               help='Continuar mesmo se algum download falhar')
 @click.option('--browser', '-b', default=None,
               help='Usar cookies do browser para vídeos com restrição de idade (ex: chrome, firefox, edge, brave)')
-def batch(urls: tuple, continue_on_error: bool, browser: str):
+@click.option('--audio-only', is_flag=True, help='Baixar somente o áudio em .mp3 para cada URL')
+def batch(urls: tuple, continue_on_error: bool, browser: str, audio_only: bool):
     """
     Baixa múltiplos vídeos em lote
     
@@ -122,6 +132,8 @@ def batch(urls: tuple, continue_on_error: bool, browser: str):
       clipr batch URL1 URL2 --continue-on-error
       
       clipr batch URL1 URL2 --browser chrome
+
+            clipr batch URL1 URL2 --audio-only
     """
     logger.header(f"Clipr v{__version__} - Download em Lote")
     
@@ -137,7 +149,7 @@ def batch(urls: tuple, continue_on_error: bool, browser: str):
         logger.info(f"\n[{i}/{total}] Processando: {url}")
         logger.separator()
         
-        success = downloader.download(url, browser=browser)
+        success = downloader.download(url, browser=browser, audio_only=audio_only)
         
         if success:
             successful += 1

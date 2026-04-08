@@ -35,7 +35,13 @@ class InstagramDownloader:
         elif d['status'] == 'finished':
             logger.success("Download concluído, processando...")
     
-    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None) -> Optional[Path]:
+    def download(
+        self,
+        url: str,
+        custom_filename: Optional[str] = None,
+        browser: Optional[str] = None,
+        audio_only: bool = False,
+    ) -> Optional[Path]:
 
         """
         Baixa um Reel do Instagram
@@ -44,6 +50,7 @@ class InstagramDownloader:
             url: URL do Reel
             custom_filename: Nome customizado para o arquivo (opcional)
             browser: Nome do browser para extrair cookies (opcional)
+            audio_only: Se True, baixa apenas o áudio e converte para mp3
             
         Returns:
             Path do arquivo se o download foi bem-sucedido, None caso contrário
@@ -76,24 +83,31 @@ class InstagramDownloader:
                 # Preparar nome do arquivo
                 if custom_filename:
                     filename = sanitize_filename(custom_filename)
-                    if not filename.endswith('.mp4'):
-                        filename += '.mp4'
                 else:
                     # Usar ID do post ou timestamp para nome único
                     post_id = info.get('id', 'reel')
-                    filename = sanitize_filename(f"{uploader}_{post_id}.mp4")
-                
-                output_template = str(self.output_path / filename)
+                    filename = sanitize_filename(f"{uploader}_{post_id}")
+
+                extension = '.mp3' if audio_only else '.mp4'
+                current_suffix = Path(filename).suffix.lower()
+                known_extensions = {'.mp3', '.mp4', '.m4a', '.webm', '.mov', '.avi', '.mkv'}
+                if current_suffix in known_extensions:
+                    filename = str(Path(filename).with_suffix(extension))
+                elif not filename.endswith(extension):
+                    filename += extension
+
+                final_output_path = self.output_path / filename
+                output_template = str(final_output_path.with_suffix('.%(ext)s')) if audio_only else str(final_output_path)
                 
                 # Verificar se já existe
-                if Path(output_template).exists():
+                if final_output_path.exists():
                     logger.warning(f"Arquivo já existe: {filename}")
                     logger.info("Download ignorado para evitar duplicação")
-                    return Path(output_template)
+                    return final_output_path
                 
                 # Configuração de download - melhor qualidade disponível
                 ydl_opts = {
-                    'format': 'best',  # Melhor qualidade disponível
+                    'format': 'bestaudio/best' if audio_only else 'best',
                     'outtmpl': output_template,
                     'progress_hooks': [self._progress_hook],
                     'quiet': False,
@@ -103,6 +117,14 @@ class InstagramDownloader:
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     },
                 }
+
+                if audio_only:
+                    logger.info("Modo áudio apenas ativado: extraindo o melhor áudio disponível em mp3")
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '192',
+                    }]
                 
                 if browser:
                     ydl_opts['cookiesfrombrowser'] = (browser,)
@@ -114,8 +136,9 @@ class InstagramDownloader:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
                 
-                logger.success(f"✓ Reel salvo em: {output_template}")
-                return Path(output_template)
+                saved_label = "Áudio" if audio_only else "Reel"
+                logger.success(f"✓ {saved_label} salvo em: {final_output_path}")
+                return final_output_path
                 
         except yt_dlp.utils.DownloadError as e:
             logger.error(f"Erro ao baixar Reel: {str(e)}")

@@ -24,7 +24,15 @@ class VideoDownloader:
         self.instagram = InstagramDownloader()
         self.transcriber = VideoTranscriber()
     
-    def download(self, url: str, custom_filename: Optional[str] = None, browser: Optional[str] = None, transcribe: bool = False, transcribe_model: str = "base") -> bool:
+    def download(
+        self,
+        url: str,
+        custom_filename: Optional[str] = None,
+        browser: Optional[str] = None,
+        audio_only: bool = False,
+        transcribe: bool = False,
+        transcribe_model: str = "base",
+    ) -> bool:
 
         """
         Baixa um vídeo detectando automaticamente a plataforma
@@ -33,6 +41,7 @@ class VideoDownloader:
             url: URL do vídeo (YouTube ou Instagram)
             custom_filename: Nome customizado para o arquivo (opcional)
             browser: Nome do browser para extrair cookies (ex: chrome, firefox, edge)
+            audio_only: Se True, baixa apenas o áudio e converte para mp3
             transcribe: Se True, gera transcrição após o download
             transcribe_model: Modelo Whisper a usar (tiny, base, small, medium, large)
             
@@ -55,9 +64,19 @@ class VideoDownloader:
             video_path = None
             
             if platform == "youtube":
-                video_path = self.youtube.download(url, custom_filename, browser=browser)
+                video_path = self.youtube.download(
+                    url,
+                    custom_filename,
+                    browser=browser,
+                    audio_only=audio_only,
+                )
             elif platform == "instagram":
-                video_path = self.instagram.download(url, custom_filename, browser=browser)
+                video_path = self.instagram.download(
+                    url,
+                    custom_filename,
+                    browser=browser,
+                    audio_only=audio_only,
+                )
             else:
                 logger.error(f"Plataforma não suportada: {platform}")
                 return False
@@ -65,7 +84,7 @@ class VideoDownloader:
             # Se download foi bem-sucedido e transcrição foi solicitada
             if video_path and transcribe:
                 logger.separator()
-                logger.info("Iniciando transcrição do vídeo...")
+                logger.info("Iniciando transcrição do arquivo baixado...")
                 logger.separator()
                 
                 output_dir = VideoPath.get_transcript_path(platform)

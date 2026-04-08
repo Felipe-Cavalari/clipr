@@ -114,6 +114,9 @@ clipr download https://youtube.com/shorts/SHORT_ID
 # Baixar Reel do Instagram
 clipr download https://www.instagram.com/reel/REEL_ID/
 
+# Baixar somente o áudio em mp3
+clipr download URL --audio-only
+
 # Com nome customizado
 clipr download URL --name "meu_video"
 

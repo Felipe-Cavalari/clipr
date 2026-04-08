@@ -109,6 +109,12 @@ clipr download https://youtube.com/shorts/AbCdEfGhIjK
 clipr download https://www.instagram.com/reel/AbCdEfGhIjK/
 ```
 
+#### Baixar somente o áudio em mp3
+
+```bash
+clipr download https://www.youtube.com/watch?v=dQw4w9WgXcQ --audio-only
+```
+
 #### Baixar com nome customizado
 
 ```bash
