@@ -65,18 +65,22 @@ class VideoPath:
     BASE_PATH = Path(os.getenv("CLIPR_OUTPUT_DIR", _get_default_base_path.__func__()))
     YOUTUBE_PATH = BASE_PATH / "Youtube"
     INSTAGRAM_PATH = BASE_PATH / "Instagram"
+    TIKTOK_PATH = BASE_PATH / "TikTok"
     YOUTUBE_TRANSCRIPTS_PATH = YOUTUBE_PATH / "Transcripts"
     INSTAGRAM_TRANSCRIPTS_PATH = INSTAGRAM_PATH / "Transcripts"
-    
+    TIKTOK_TRANSCRIPTS_PATH = TIKTOK_PATH / "Transcripts"
+
     @classmethod
     def ensure_directories(cls) -> None:
         """Cria os diretórios necessários caso não existam"""
         cls.BASE_PATH.mkdir(parents=True, exist_ok=True)
         cls.YOUTUBE_PATH.mkdir(parents=True, exist_ok=True)
         cls.INSTAGRAM_PATH.mkdir(parents=True, exist_ok=True)
+        cls.TIKTOK_PATH.mkdir(parents=True, exist_ok=True)
         cls.YOUTUBE_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
         cls.INSTAGRAM_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
-    
+        cls.TIKTOK_TRANSCRIPTS_PATH.mkdir(parents=True, exist_ok=True)
+
     @classmethod
     def get_output_path(cls, platform: str) -> Path:
         """Retorna o caminho de saída baseado na plataforma"""
@@ -84,9 +88,11 @@ class VideoPath:
             return cls.YOUTUBE_PATH
         elif platform.lower() == "instagram":
             return cls.INSTAGRAM_PATH
+        elif platform.lower() == "tiktok":
+            return cls.TIKTOK_PATH
         else:
             raise ValueError(f"Plataforma desconhecida: {platform}")
-    
+
     @classmethod
     def get_transcript_path(cls, platform: str) -> Path:
         """Retorna o caminho para salvar transcritos baseado na plataforma"""
@@ -94,6 +100,8 @@ class VideoPath:
             return cls.YOUTUBE_TRANSCRIPTS_PATH
         elif platform.lower() == "instagram":
             return cls.INSTAGRAM_TRANSCRIPTS_PATH
+        elif platform.lower() == "tiktok":
+            return cls.TIKTOK_TRANSCRIPTS_PATH
         else:
             raise ValueError(f"Plataforma desconhecida: {platform}")
 
@@ -115,30 +123,39 @@ class URLValidator:
         r'(?:https?://)?(?:www\.)?instagram\.com/p/[\w-]+',
         r'(?:https?://)?(?:www\.)?instagram\.com/tv/[\w-]+',
     ]
-    
+
+    # Padrões de URL para TikTok
+    TIKTOK_PATTERNS = [
+        r'(?:https?://)?(?:www\.)?tiktok\.com/@[\w.-]+/video/\d+',
+        r'(?:https?://)?vm\.tiktok\.com/[\w-]+',
+        r'(?:https?://)?vt\.tiktok\.com/[\w-]+',
+    ]
+
     @classmethod
     def identify_platform(cls, url: str) -> Optional[str]:
         """
         Identifica a plataforma baseada na URL
-        
+
         Args:
             url: URL do vídeo
-            
+
         Returns:
-            'youtube', 'instagram' ou None se não identificado
+            'youtube', 'instagram', 'tiktok' ou None se não identificado
         """
         url = url.strip()
-        
-        # Verifica YouTube
+
         for pattern in cls.YOUTUBE_PATTERNS:
             if re.search(pattern, url, re.IGNORECASE):
                 return "youtube"
-        
-        # Verifica Instagram
+
         for pattern in cls.INSTAGRAM_PATTERNS:
             if re.search(pattern, url, re.IGNORECASE):
                 return "instagram"
-        
+
+        for pattern in cls.TIKTOK_PATTERNS:
+            if re.search(pattern, url, re.IGNORECASE):
+                return "tiktok"
+
         return None
     
     @classmethod

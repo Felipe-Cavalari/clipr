@@ -6,7 +6,7 @@ from typing import Optional
 from pathlib import Path
 from .youtube import YouTubeDownloader
 from .instagram import InstagramDownloader
-from .transcriber import VideoTranscriber
+from .tiktok import TikTokDownloader
 from .utils import URLValidator, VideoPath
 from .logger import logger
 
@@ -22,7 +22,7 @@ class VideoDownloader:
         VideoPath.ensure_directories()
         self.youtube = YouTubeDownloader()
         self.instagram = InstagramDownloader()
-        self.transcriber = VideoTranscriber()
+        self.tiktok = TikTokDownloader()
     
     def download(
         self,
@@ -53,7 +53,7 @@ class VideoDownloader:
         
         if not is_valid:
             logger.error("URL inválida ou não suportada")
-            logger.info("Plataformas suportadas: YouTube (vídeos e Shorts), Instagram (Reels)")
+            logger.info("Plataformas suportadas: YouTube (vídeos e Shorts), Instagram (Reels), TikTok")
             return False
         
         logger.info(f"Plataforma detectada: {platform.upper()}")
@@ -77,6 +77,13 @@ class VideoDownloader:
                     browser=browser,
                     audio_only=audio_only,
                 )
+            elif platform == "tiktok":
+                video_path = self.tiktok.download(
+                    url,
+                    custom_filename,
+                    browser=browser,
+                    audio_only=audio_only,
+                )
             else:
                 logger.error(f"Plataforma não suportada: {platform}")
                 return False
@@ -86,9 +93,11 @@ class VideoDownloader:
                 logger.separator()
                 logger.info("Iniciando transcrição do arquivo baixado...")
                 logger.separator()
-                
+
+                from .transcriber import VideoTranscriber
+                transcriber = VideoTranscriber(model=transcribe_model)
                 output_dir = VideoPath.get_transcript_path(platform)
-                result = self.transcriber.transcribe_video(
+                result = transcriber.transcribe_video(
                     video_path,
                     output_dir=output_dir,
                     language=None  # Auto-detect
@@ -127,6 +136,8 @@ class VideoDownloader:
                 return self.youtube.get_video_info(url, browser=browser)
             elif platform == "instagram":
                 return self.instagram.get_reel_info(url, browser=browser)
+            elif platform == "tiktok":
+                return self.tiktok.get_video_info(url, browser=browser)
             return None
             
         except Exception as e:
