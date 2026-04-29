@@ -114,6 +114,49 @@ class VideoDownloader:
             logger.error(f"Erro crítico durante o download: {str(e)}")
             return False
     
+    def download_video(
+        self,
+        url: str,
+        custom_filename: Optional[str] = None,
+        browser: Optional[str] = None,
+    ) -> Optional[Path]:
+        """
+        Baixa um vídeo e retorna o Path do arquivo salvo.
+
+        Diferente de download(), retorna o caminho do arquivo em vez de bool,
+        permitindo que outros comandos (ex: trim) usem o arquivo baixado.
+
+        Args:
+            url: URL do vídeo (YouTube, Instagram ou TikTok)
+            custom_filename: Nome customizado para o arquivo (opcional)
+            browser: Nome do browser para extrair cookies (opcional)
+
+        Returns:
+            Path do arquivo baixado, ou None em caso de falha.
+        """
+        is_valid, platform = URLValidator.validate_and_identify(url)
+
+        if not is_valid:
+            logger.error("URL inválida ou não suportada")
+            logger.info("Plataformas suportadas: YouTube, Instagram Reels, TikTok")
+            return None
+
+        logger.info(f"Plataforma detectada: {platform.upper()}")
+        logger.separator()
+
+        try:
+            if platform == "youtube":
+                return self.youtube.download(url, custom_filename, browser=browser)
+            elif platform == "instagram":
+                return self.instagram.download(url, custom_filename, browser=browser)
+            elif platform == "tiktok":
+                return self.tiktok.download(url, custom_filename, browser=browser)
+            logger.error(f"Plataforma não suportada: {platform}")
+            return None
+        except Exception as e:
+            logger.error(f"Erro crítico durante o download: {str(e)}")
+            return None
+
     def get_info(self, url: str, browser: Optional[str] = None) -> Optional[dict]:
         """
         Obtém informações sobre um vídeo sem baixá-lo

@@ -413,7 +413,7 @@ def _pick_untranscribed_interactively() -> Path | None:
         click.echo(f"  Opção inválida. Digite um número de 0 a {len(files)}.")
 
 
-def _pick_file_with_explorer() -> Path | None:
+def _pick_file_with_explorer(title: str = "Selecione um vídeo ou áudio") -> Path | None:
     """Abre o explorador de arquivos via tkinter e retorna o arquivo selecionado."""
     try:
         import tkinter as tk
@@ -428,7 +428,7 @@ def _pick_file_with_explorer() -> Path | None:
 
     extensions = " ".join(f"*{e}" for e in sorted(_MEDIA_EXTENSIONS))
     chosen = filedialog.askopenfilename(
-        title="Selecione um vídeo ou áudio para transcrever",
+        title=title,
         filetypes=[("Vídeos e áudios", extensions), ("Todos os arquivos", "*.*")],
         initialdir=str(VideoPath.BASE_PATH) if VideoPath.BASE_PATH.exists() else str(Path.home()),
     )
@@ -606,6 +606,269 @@ def set_model():
 
     cfg.set("preferred_transcription_model", chosen)
     logger.success(f"Modelo salvo: {chosen}")
+
+
+@cli.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.argument('source', required=False, default=None)
+@click.option('--output', '-o', default=None, help='Nome do arquivo de saída (opcional)')
+@click.option('--keep-original', is_flag=True, default=True, help='Manter o arquivo original (padrão: sim)')
+@click.option('--format', 'fmt', default='mp4', show_default=True,
+              type=click.Choice(['mp4', 'mkv', 'mov', 'avi']),
+              help='Formato do arquivo de saída')
+@click.option('--browser', '-b', default=None,
+              help='Usar cookies do browser ao baixar URL (ex: chrome, firefox)')
+def trim(source: str | None, output: str, keep_original: bool, fmt: str, browser: str):
+    """
+    Corte interativo de vídeo via terminal
+
+    SOURCE: Caminho para arquivo local (.mp4, .mkv, …) ou URL do YouTube/Instagram/TikTok.
+    Se for uma URL, o vídeo é baixado antes do corte.
+    Se omitido, abre o explorador de arquivos para selecionar o vídeo.
+
+    Exemplos:
+
+      clipr trim
+
+      clipr trim video.mp4
+
+      clipr trim https://youtube.com/watch?v=XYZ
+
+      clipr trim video.mp4 --output corte_final.mp4
+
+      clipr trim video.mp4 --format mkv
+    """
+    from .trimmer import (
+        check_ffmpeg,
+        get_video_info,
+        interactive_cut_loop,
+        process_cuts,
+        fmt_seconds,
+    )
+    from rich.console import Console
+    from rich.table import Table
+
+    rich_console = Console()
+
+    logger.header(f"Clipr v{__version__} - Corte Interativo de Vídeo")
+
+    # Verifica dependências
+    if not check_ffmpeg():
+        logger.error("FFmpeg não encontrado. Instale o FFmpeg e adicione ao PATH.")
+        logger.info("  macOS:   brew install ffmpeg")
+        logger.info("  Windows: choco install ffmpeg  (ou https://ffmpeg.org/download.html)")
+        sys.exit(1)
+
+    # Sem argumento: abre explorador de arquivos
+    from pathlib import Path as _Path
+    from .utils import URLValidator
+
+    if source is None:
+        logger.info("Nenhum arquivo informado. Abrindo explorador de arquivos...")
+        chosen = _pick_file_with_explorer(title="Selecione um vídeo para cortar")
+        if chosen is None:
+            logger.warning("Nenhum arquivo selecionado. Abortando.")
+            sys.exit(0)
+        source = str(chosen)
+
+    source_path: _Path | None = None
+
+    if URLValidator.is_valid_url(source):
+        platform = URLValidator.identify_platform(source)
+        if platform is None:
+            logger.error("URL não suportada. Plataformas aceitas: YouTube, Instagram, TikTok.")
+            sys.exit(1)
+
+        logger.info("URL detectada. Iniciando download antes do corte...")
+        logger.separator()
+
+        downloader = VideoDownloader()
+        source_path = downloader.download_video(source, browser=browser)
+
+        if not source_path or not source_path.exists():
+            logger.error("Falha ao baixar o vídeo. Verifique a URL e tente novamente.")
+            sys.exit(1)
+
+        logger.success(f"Download concluído: {source_path.name}")
+        logger.separator()
+    else:
+        source_path = _Path(source)
+        if not source_path.exists():
+            logger.error(f"Arquivo não encontrado: {source}")
+            sys.exit(1)
+        if not source_path.is_file():
+            logger.error(f"O caminho não é um arquivo: {source}")
+            sys.exit(1)
+
+    # Informações do vídeo
+    info = get_video_info(source_path)
+    if info is None:
+        logger.error("Não foi possível ler as informações do vídeo com ffprobe.")
+        sys.exit(1)
+
+    duration = info["duration"]
+    if duration <= 0:
+        logger.error("Duração do vídeo inválida ou não detectada.")
+        sys.exit(1)
+
+    table = Table(show_header=False, border_style="cyan", box=None, padding=(0, 2))
+    table.add_column(style="bold cyan")
+    table.add_column()
+    table.add_row("Arquivo", source_path.name)
+    table.add_row("Duração", f"{fmt_seconds(duration)}  ({duration:.1f}s)")
+    if info.get("width") and info.get("height"):
+        table.add_row("Resolução", f"{info['width']}x{info['height']}")
+    rich_console.print(table)
+    logger.separator()
+
+    # Loop interativo de seleção de cortes
+    cuts = interactive_cut_loop(duration)
+
+    if not cuts:
+        logger.warning("Nenhum corte selecionado. Abortando.")
+        sys.exit(0)
+
+    # Determina o caminho de saída
+    if output:
+        out_path = _Path(output)
+        if not out_path.suffix:
+            out_path = out_path.with_suffix(f".{fmt}")
+    else:
+        stem = source_path.stem
+        out_path = source_path.parent / f"{stem}_trimmed.{fmt}"
+
+    # Garante que não sobrescreve sem aviso
+    if out_path.exists() and out_path != source_path:
+        logger.warning(f"Arquivo de saída já existe: {out_path.name}")
+        if not click.confirm("  Deseja sobrescrever?", default=False):
+            logger.warning("Operação cancelada.")
+            sys.exit(0)
+
+    logger.separator()
+    logger.info(f"Processando {len(cuts)} corte(s) → {out_path.name}")
+    logger.separator()
+
+    success = process_cuts(source_path, cuts, out_path, video_format=fmt)
+
+    logger.separator()
+    if success:
+        logger.success(f"✅ Arquivo salvo: {out_path}")
+    else:
+        logger.error("❌ Falha ao processar os cortes.")
+        sys.exit(1)
+
+
+@cli.command(name="extract-audio", context_settings=dict(help_option_names=['-h', '--help']))
+@click.argument('source', required=False, default=None)
+@click.option('--output', '-o', default=None, help='Nome do arquivo de saída (opcional)')
+@click.option('--format', 'fmt', default='mp3', show_default=True,
+              type=click.Choice(['mp3', 'm4a', 'wav', 'ogg', 'flac']),
+              help='Formato do áudio de saída')
+@click.option('--browser', '-b', default=None,
+              help='Usar cookies do browser ao baixar URL (ex: chrome, firefox)')
+def extract_audio(source: str | None, output: str, fmt: str, browser: str):
+    """
+    Extrai o áudio de um vídeo já baixado ou de uma URL
+
+    SOURCE: Caminho para arquivo local (.mp4, .mkv, …) ou URL do YouTube/Instagram/TikTok.
+    Se for uma URL, o vídeo é baixado antes da extração.
+    Se omitido, abre o explorador de arquivos para selecionar o arquivo.
+
+    Exemplos:
+
+      clipr extract-audio
+
+      clipr extract-audio video.mp4
+
+      clipr extract-audio video.mp4 --format m4a
+
+      clipr extract-audio video.mp4 --output trilha_sonora.mp3
+
+      clipr extract-audio https://youtube.com/watch?v=XYZ
+
+      clipr extract-audio https://youtube.com/watch?v=XYZ --format wav
+    """
+    from .extractor import check_ffmpeg, get_audio_info, extract_audio as do_extract, show_audio_info_table
+    from .utils import URLValidator
+    from pathlib import Path as _Path
+
+    logger.header(f"Clipr v{__version__} - Extração de Áudio")
+
+    if not check_ffmpeg():
+        logger.error("FFmpeg não encontrado. Instale o FFmpeg e adicione ao PATH.")
+        logger.info("  macOS:   brew install ffmpeg")
+        logger.info("  Windows: choco install ffmpeg  (ou https://ffmpeg.org/download.html)")
+        sys.exit(1)
+
+    if source is None:
+        logger.info("Nenhum arquivo informado. Abrindo explorador de arquivos...")
+        chosen = _pick_file_with_explorer(title="Selecione um vídeo para extrair o áudio")
+        if chosen is None:
+            logger.warning("Nenhum arquivo selecionado. Abortando.")
+            sys.exit(0)
+        source = str(chosen)
+
+    source_path: _Path | None = None
+
+    if URLValidator.is_valid_url(source):
+        platform = URLValidator.identify_platform(source)
+        if platform is None:
+            logger.error("URL não suportada. Plataformas aceitas: YouTube, Instagram, TikTok.")
+            sys.exit(1)
+
+        logger.info("URL detectada. Iniciando download antes da extração...")
+        logger.separator()
+
+        downloader = VideoDownloader()
+        source_path = downloader.download_video(source, browser=browser)
+
+        if not source_path or not source_path.exists():
+            logger.error("Falha ao baixar o vídeo. Verifique a URL e tente novamente.")
+            sys.exit(1)
+
+        logger.success(f"Download concluído: {source_path.name}")
+        logger.separator()
+    else:
+        source_path = _Path(source)
+        if not source_path.exists():
+            logger.error(f"Arquivo não encontrado: {source}")
+            sys.exit(1)
+        if not source_path.is_file():
+            logger.error(f"O caminho não é um arquivo: {source}")
+            sys.exit(1)
+
+    info = get_audio_info(source_path)
+    if info is None:
+        logger.error("Nenhum stream de áudio encontrado ou não foi possível ler o arquivo.")
+        sys.exit(1)
+
+    show_audio_info_table(source_path, info)
+    logger.separator()
+
+    if output:
+        out_path = _Path(output)
+        if not out_path.suffix:
+            out_path = out_path.with_suffix(f".{fmt}")
+    else:
+        out_path = source_path.parent / f"{source_path.stem}.{fmt}"
+
+    if out_path.exists() and out_path != source_path:
+        logger.warning(f"Arquivo de saída já existe: {out_path.name}")
+        if not click.confirm("  Deseja sobrescrever?", default=False):
+            logger.warning("Operação cancelada.")
+            sys.exit(0)
+
+    logger.info(f"Formato de saída: {fmt.upper()}")
+    logger.info(f"Destino: {out_path.name}")
+    logger.separator()
+
+    success = do_extract(source_path, out_path, fmt=fmt)
+
+    logger.separator()
+    if success:
+        logger.success(f"✅ Áudio salvo: {out_path}")
+    else:
+        logger.error("❌ Falha ao extrair o áudio.")
+        sys.exit(1)
 
 
 def main():

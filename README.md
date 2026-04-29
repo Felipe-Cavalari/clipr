@@ -18,6 +18,7 @@ Clipr é uma ferramenta de linha de comando robusta e fácil de usar para baixar
 - 💪 **Tratamento robusto de erros** - Mensagens claras e informativas
 - 🎨 **Interface bonita e informativa** - Logs coloridos com Rich
 - ⚡ **Download em lote** - Baixe múltiplos vídeos de uma vez
+- ✂️ **Corte interativo de vídeo** - Defina pontos de início/fim no terminal, com suporte a múltiplos cortes e concatenação automática
 
 ---
 
@@ -139,6 +140,56 @@ clipr batch URL1 URL2 URL3
 clipr batch URL1 URL2 URL3 --continue-on-error
 ```
 
+---
+
+## ✂️ Corte Interativo de Vídeo (`clipr trim`)
+
+O comando `trim` permite cortar vídeos diretamente pelo terminal com uma experiência interativa.
+Aceita tanto arquivos locais quanto URLs (YouTube, Instagram, TikTok).
+
+### Uso básico
+
+```bash
+clipr trim video.mp4
+clipr trim https://youtube.com/watch?v=VIDEO_ID
+clipr trim video.mp4 --output corte_final.mp4
+```
+
+### Flags disponíveis
+
+| Flag | Atalho | Descrição |
+|---|---|---|
+| `--output` | `-o` | Nome do arquivo de saída (padrão: `<nome>_trimmed.mp4`) |
+| `--format` | | Formato de saída: `mp4` (padrão), `mkv`, `mov`, `avi` |
+| `--browser` | `-b` | Browser para cookies ao baixar URL (ex: `chrome`, `firefox`) |
+
+### Fluxo interativo
+
+1. Clipr exibe a duração e resolução do vídeo
+2. Você define os pontos de **início** e **fim** de cada corte (formatos aceitos: `HH:MM:SS`, `MM:SS` ou segundos inteiros)
+3. Uma tabela mostra os cortes adicionados com a duração resultante
+4. Escolha se quer adicionar mais cortes, desfazer o último ou finalizar
+5. O FFmpeg processa os cortes sem re-encode (`-c copy`) para máxima velocidade
+6. Se houver múltiplos cortes, os segmentos são automaticamente concatenados
+
+### Exemplos
+
+```bash
+# Arquivo local — corte único
+clipr trim video.mp4
+
+# URL do YouTube com nome de saída customizado
+clipr trim https://youtube.com/watch?v=XYZ --output destaque.mp4
+
+# Arquivo com formato MKV
+clipr trim video.mp4 --format mkv
+
+# URL com cookies do Chrome (vídeos com restrição de idade)
+clipr trim https://youtube.com/watch?v=XYZ --browser chrome
+```
+
+---
+
 ### Outros comandos úteis
 
 #### Ver caminhos de saída
@@ -193,6 +244,9 @@ clipr/
 │   ├── downloader.py    # Gerenciador unificado
 │   ├── youtube.py       # Downloader do YouTube
 │   ├── instagram.py     # Downloader do Instagram
+│   ├── tiktok.py        # Downloader do TikTok
+│   ├── trimmer.py       # Corte interativo de vídeo (FFmpeg)
+│   ├── transcriber.py   # Transcrição com Whisper
 │   ├── utils.py         # Utilitários e validações
 │   └── logger.py        # Sistema de logging (Rich)
 ├── requirements.txt     # Dependências
@@ -206,6 +260,9 @@ clipr/
 - **`downloader.py`** - Orquestrador que detecta a plataforma e delega o download
 - **`youtube.py`** - Lógica específica para YouTube (vídeos e Shorts)
 - **`instagram.py`** - Lógica específica para Instagram Reels
+- **`tiktok.py`** - Lógica específica para TikTok
+- **`trimmer.py`** - Corte interativo de vídeo com FFmpeg (ffprobe, loop interativo, concat)
+- **`transcriber.py`** - Transcrição automática via Whisper
 - **`utils.py`** - Validação de URLs, sanitização de nomes, gerenciamento de paths
 - **`logger.py`** - Sistema de logging com Rich para saída bonita no terminal
 
@@ -296,13 +353,14 @@ MIT License - Sinta-se livre para usar, modificar e distribuir.
 
 Recursos planejados para versões futuras:
 
-- [ ] Suporte para TikTok
+- ✅ Suporte para TikTok
+- ✅ Corte interativo de vídeo (`clipr trim`)
+- ✅ Transcrição automática com Whisper
 - [ ] Downloads paralelos
 - [ ] Playlist completa
 - [ ] Conversão automática para diferentes formatos
 - [ ] Extração de legendas
-- [ ] Transcrição automática
-- [ ] Interface web (opcional)
+- [ ] Interface web
 - [ ] Configuração via arquivo
 - [ ] Agendamento de downloads
 

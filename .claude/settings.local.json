@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from clipr.trimmer import check_ffmpeg, get_video_info, interactive_cut_loop, process_cuts, fmt_seconds; print\\('trimmer OK'\\)\")",
+      "Bash(python -m clipr trim --help)",
+      "Bash(python -m clipr --help)",
+      "Bash(python -c \"from clipr.cli import cli; from clipr.extractor import check_ffmpeg, get_audio_info, extract_audio, show_audio_info_table; print\\('OK - modulos carregados com sucesso'\\)\")",
+      "Bash(python -c \"from clipr.cli import cli; cmds = list\\(cli.commands.keys\\(\\)\\); print\\('Comandos registrados:', cmds\\)\")"
+    ]
+  }
+}
